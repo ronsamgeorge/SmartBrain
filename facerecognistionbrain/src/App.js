@@ -38,7 +38,8 @@ class App extends React.Component{
       input : '',
       imageURL : '',
       box : {},
-      route : 'signin'
+      route : 'signin',
+      isSignedIn : false
     }
   }
 
@@ -89,9 +90,15 @@ class App extends React.Component{
     .catch(err => console.log(err));
   }
 
-  onRouteChange = (data) =>
-  {
-    this.setState({route : data})
+  onRouteChange = (route) => {
+    if (route == "signout"){
+      this.setState({isSignedIn: false});
+    }else if (route == 'home')
+    { 
+      this.setState({isSignedIn: true});
+    }
+
+    this.setState({route : route})
   }
 
 
@@ -101,7 +108,7 @@ class App extends React.Component{
     return (
       <div className="App">
         <Particles className = "particles" params = {particlesOptions}/>
-        <Navigation onRouteChange={this.onRouteChange}/>
+        <Navigation isSignedIn={this.state.isSignedIn} onRouteChange={this.onRouteChange}/>
          { this.state.route ==='home'
           ? <div>
               <Logo />
@@ -109,11 +116,10 @@ class App extends React.Component{
               <ImageLinkFor onInputChange = {this.onInputChange} onButtonSubmit = {this.onButtonSubmit} />
               <FaceRecognition imageURL ={this.state.imageURL} box={this.state.box}/> 
             </div>
-          : (this.state.route === 'signin'
-              ? <SignIn onRouteChange= {this.onRouteChange}/>
-              : <Register onRouteChange = {this.onRouteChange}/>
-              )
-           
+          : (this.state.route === 'register'
+              ? <Register onRouteChange= {this.onRouteChange}/>
+              : <SignIn onRouteChange = {this.onRouteChange}/>
+              )  
          }    
       </div>
     );
