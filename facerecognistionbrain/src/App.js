@@ -3,16 +3,24 @@ import Logo from './Components/Logo/Logo'
 import Navigation from './Components/Navigation/Navigation'
 import ImageLinkFor from './Components/ImageLinkForm/ImageLinkForm'
 import Rank from './Components/Rank/Rank'
+import FaceRecognition from './Components/FaceRecognition/FaceRecognition'
 import './App.css';
 import 'tachyons';
-
 import Particles from 'react-particles-js';
+import Clarifai from 'clarifai';
+
+import SignIn from './Components/SignIn/SignIn';
+import Register from './Components/Register/Register'
+
+const app = new Clarifai.App({
+ apiKey: '75db95205a824549a91120f33cba0c35'
+});
 
 
 const particlesOptions = {
   particles : {
     number : {
-      value : 30,
+      value : 100,
       density :{
         enable : true ,
         value_area : 800
@@ -20,17 +28,93 @@ const particlesOptions = {
     }
   }
 }
+
+
 class App extends React.Component{
+
+  constructor(props){
+    super(props)
+    this.state = {
+      input : '',
+      imageURL : '',
+      box : {},
+      route : 'signin'
+    }
+  }
+
+
+
+  onInputChange = (event) => {
+    this.setState({input : event.target.value})
+  } 
+
+
+
+  calcuateFaceLocation = (data) =>{
+    const clarifaiFace =  data.outputs[0].data.regions[0].region_info.bounding_box;
+    const image = document.getElementById('inputImg');
+
+    const width = Number(image.width);
+    const height = Number(image.height);
+  
+    console.log(width , height);
+   //calculating the boudning box , alot of math
+    return {
+      leftCol : clarifaiFace.left_col * width,
+      topRow : clarifaiFace.top_row * height,
+      rightCol :  width - (clarifaiFace.right_col * width),
+      bottomRow : height - (clarifaiFace.bottom_row * height)
+    }
+  }
+
+
+
+  displayFaceBox = (box) => {
+    console.log(box);
+    this.setState({box : box});
+  }
+
+
+
+  onButtonSubmit = () => {
+    this.setState({imageURL: this.state.input})
+
+    app.models
+    .predict(
+    Clarifai.FACE_DETECT_MODEL,
+    // THE JPG
+    this.state.input
+    )
+    .then(response => this.displayFaceBox(this.calcuateFaceLocation(response)))
+    .catch(err => console.log(err));
+  }
+
+  onRouteChange = (data) =>
+  {
+    this.setState({route : data})
+  }
+
+
+
 
   render(){
     return (
       <div className="App">
         <Particles className = "particles" params = {particlesOptions}/>
-        <Navigation />
-        <Logo />
-        <Rank />
-        <ImageLinkFor />
-        {/*<FaceRecognition />*/}     
+        <Navigation onRouteChange={this.onRouteChange}/>
+         { this.state.route ==='home'
+          ? <div>
+              <Logo />
+              <Rank />
+              <ImageLinkFor onInputChange = {this.onInputChange} onButtonSubmit = {this.onButtonSubmit} />
+              <FaceRecognition imageURL ={this.state.imageURL} box={this.state.box}/> 
+            </div>
+          : (this.state.route === 'signin'
+              ? <SignIn onRouteChange= {this.onRouteChange}/>
+              : <Register onRouteChange = {this.onRouteChange}/>
+              )
+           
+         }    
       </div>
     );
   }
